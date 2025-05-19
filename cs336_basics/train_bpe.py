@@ -2,7 +2,6 @@ import regex as re
 import time
 from multiprocessing import Pool, Manager
 from cs336_basics.pretokenization_example import find_chunk_boundaries
-import pickle
 
 
 SPECIAL_TOKEN = "<|endoftext|>"
@@ -10,9 +9,9 @@ PAT = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s
 
 
 class Word:
-    def __init__(self, word: str):
+    def __init__(self, word: bytes):
         self.word = word
-        self.tokens = tuple(word)
+        self.tokens = tuple([bytes([w]) for w in word])
 
     def __eq__(self, other):
         return self.word.__eq__(other.word)
@@ -23,13 +22,13 @@ class Word:
     def __len__(self):
         return len(self.word)
     
-    def pairs(self) -> list[tuple[str, str]]:
+    def pairs(self) -> list[tuple[bytes, bytes]]:
         return [
             (self.tokens[i], self.tokens[i + 1]) 
             for i in range(len(self.tokens) - 1)
         ]
     
-    def merge(self, pair: tuple[str, str], merged: str) -> None:
+    def merge(self, pair: tuple[bytes, bytes], merged: bytes) -> None:
         new_tokens, i = [], 0
         while i < len(self.tokens):
             if self.tokens[i:i + 2] == pair:
@@ -73,9 +72,9 @@ def train_bpe(
     vocab |= {i + l: bytes([i]) for i in range(256)}
     merges = []
 
-    pairs: dict[str, int] = {}
+    pairs: dict[bytes, int] = {}
     words: dict[Word, int] = {}
-    pair2words: dict[str, list[Word]] = {}
+    pair2words: dict[bytes, list[Word]] = {}
 
     def pre_tokenize(text: str) -> None:
         docs = re.split(re.escape("|".join(special_tokens)), text)
@@ -86,7 +85,7 @@ def train_bpe(
                         word = word.group(0).replace("\r", "")
                         if not word:
                             continue
-                        word = Word(word)
+                        word = Word(word.encode("utf-8"))
                         words[word] = words.get(word, 0) + 1
                         word_pairs = word.pairs()
                         for pair in word_pairs:
@@ -135,9 +134,9 @@ def train_bpe(
     # Merge pairs
     while len(vocab) < vocab_size:
         pair, _ = max(pairs.items(), key=lambda x: (x[1], x[0]))
-        merged = "".join(pair)
-        merges.append((pair[0].encode("utf-8"), pair[1].encode("utf-8")))
-        vocab[len(vocab)] = merged.encode("utf-8")
+        merged = b"".join(pair)
+        merges.append((pair[0], pair[1]))
+        vocab[len(vocab)] = merged
         for word in pair2words[pair]:
             count = words[word]
             old_pairs = [p for p in word.pairs() if p != pair]
@@ -166,17 +165,3 @@ if __name__ == "__main__":
         special_tokens=[SPECIAL_TOKEN],
         num_processes=1,
         debug=True)
-    
-    actual = {
-        "vocab_keys": set(vocab.keys()),
-        "vocab_values": set(vocab.values()),
-        "merges": merges,
-    }
-
-    # Load the snapshot
-    with open("tests/_snapshots/test_train_bpe_special_tokens.pkl", "rb") as f:
-        expected_data = pickle.load(f)
-    
-    if isinstance(actual, dict):
-        for key in actual: 
-            assert actual[key] == expected_data[key]
