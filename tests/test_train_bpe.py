@@ -68,7 +68,6 @@ def test_train_bpe_special_tokens(snapshot):
     merged with other tokens.
     """
     input_path = FIXTURES_PATH / "tinystories_sample_5M.txt"
-    # input_path = FIXTURES_PATH / "corpus.en"
     vocab, merges = run_train_bpe(
         input_path=input_path,
         vocab_size=1000,
