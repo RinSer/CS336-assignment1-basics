@@ -118,7 +118,7 @@ def train_bpe(
 
     if num_processes > 1:
         for word in all_words:
-            word = Word(word)
+            word = Word(word.encode("utf-8"))
             words[word] = words.get(word, 0) + 1
             pairs = word.pairs()
             for pair in pairs:
