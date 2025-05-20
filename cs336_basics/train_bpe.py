@@ -1,5 +1,6 @@
 import regex as re
 import time
+from collections import defaultdict
 from multiprocessing import Pool, Manager
 from cs336_basics.pretokenization_example import find_chunk_boundaries
 
@@ -42,15 +43,26 @@ class Word:
 
 def pre_tokenize_async(
     text: str,
-    special_tokens: list[str],
-    words: list[tuple[str]]) -> None:
+    special_tokens: list[str]
+) -> tuple[list[tuple[str]], list[tuple[str]], dict[bytes, list[Word]]]:
+    pairs: dict[bytes, int] = defaultdict(int)
+    words: dict[Word, int] = defaultdict(int)
+    pair2words: dict[bytes, set[Word]] = defaultdict(set)
     docs = re.split(re.escape("|".join(special_tokens)), text)
     for doc in docs:
         if doc.strip():  # Ignore empty parts
             for word in re.finditer(PAT, doc):
                 if word:
                     word = word.group(0).replace("\r", "")
-                    words.append(word.encode("utf-8"))
+                    if not word:
+                        continue
+                    word = Word(word.encode("utf-8"))
+                    words[word] += 1
+                    word_pairs = word.pairs()
+                    for pair in word_pairs:
+                        pairs[pair] += 1
+                        pair2words[pair].add(word)
+    return (pairs, words, pair2words)
 
 
 def train_bpe(
@@ -72,9 +84,9 @@ def train_bpe(
     vocab |= {i + l: bytes([i]) for i in range(256)}
     merges = []
 
-    pairs: dict[bytes, int] = {}
-    words: dict[Word, int] = {}
-    pair2words: dict[bytes, list[Word]] = {}
+    pairs: dict[bytes, int] = defaultdict(int)
+    words: dict[Word, int] = defaultdict(int)
+    pair2words: dict[bytes, set[Word]] = defaultdict(set)
 
     def pre_tokenize(text: str) -> None:
         docs = re.split(re.escape("|".join(special_tokens)), text)
@@ -86,28 +98,37 @@ def train_bpe(
                         if not word:
                             continue
                         word = Word(word.encode("utf-8"))
-                        words[word] = words.get(word, 0) + 1
+                        words[word] += 1
                         word_pairs = word.pairs()
                         for pair in word_pairs:
-                            pairs[pair] = pairs.get(pair, 0) + 1
-                            if pair not in pair2words:
-                                pair2words[pair] = set()
+                            pairs[pair] += 1
                             pair2words[pair].add(word)
 
     # Pre-tokenize the input file
     if num_processes > 1:
         with Manager() as manager, Pool(num_processes) as pool:
-            all_words = manager.list()
+            results = []
             with open(input_path, "rb") as f:
                 boundaries = find_chunk_boundaries(
                     f, num_processes, SPECIAL_TOKEN.encode("utf-8"))
                 for start, end in zip(boundaries[:-1], boundaries[1:]):
                     f.seek(start)
                     chunk = f.read(end - start).decode("utf-8", errors="ignore")
-                    pool.apply_async(pre_tokenize_async, (chunk, special_tokens, all_words))      
+                    result = pool.apply_async(
+                        pre_tokenize_async,
+                        (chunk, special_tokens)
+                    )
+                    results.append(result)
             pool.close()
             pool.join()
-            all_words = list(all_words)
+            for result in results:
+                p, w, pw = result.get()
+                for pair, count in p.items():
+                    pairs[pair] += count
+                for word, count in w.items():
+                    words[word] += count
+                for pair, word_set in pw.items():
+                    pair2words[pair].update(word_set)
     else:
         with open(input_path, "rb") as f:
             boundaries = find_chunk_boundaries(
@@ -116,17 +137,6 @@ def train_bpe(
                 f.seek(start)
                 chunk = f.read(end - start).decode("utf-8", errors="ignore")
                 pre_tokenize(chunk)
-
-    if num_processes > 1:
-        for word in all_words:
-            word = Word(word)
-            words[word] = words.get(word, 0) + 1
-            word_pairs = word.pairs()
-            for pair in word_pairs:
-                pairs[pair] = pairs.get(pair, 0) + 1
-                if pair not in pair2words:
-                    pair2words[pair] = set()
-                pair2words[pair].add(word)
     
     if debug:
         print(f"Pre-tokenization took {time.time() - begin:.2f} seconds")
@@ -146,9 +156,7 @@ def train_bpe(
             word.merge(pair, merged)
             new_pairs = [p for p in word.pairs() if p != pair]
             for new_pair in new_pairs:
-                pairs[new_pair] = pairs.get(new_pair, 0) + count
-                if new_pair not in pair2words:
-                    pair2words[new_pair] = set()
+                pairs[new_pair] += count
                 pair2words[new_pair].add(word)
         del pairs[pair]
         del pair2words[pair]
@@ -161,7 +169,8 @@ def train_bpe(
 
 if __name__ == "__main__":
     vocab, merges = train_bpe(
-        input_path="tests/fixtures/corpus.en",
+        input_path="tests/fixtures/tinystories_sample_5M.txt",
         vocab_size=1000,
         special_tokens=[SPECIAL_TOKEN],
+        num_processes=16,
         debug=True)
