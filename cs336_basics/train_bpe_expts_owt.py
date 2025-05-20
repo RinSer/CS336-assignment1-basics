@@ -3,18 +3,18 @@ import time
 from cs336_basics.train_bpe import train_bpe
 
 
-PICKLE_FILE = "./bpe_tinystories.pkl"
+PICKLE_FILE = "./bpe_expts_owt.pkl"
 
 
 def run_train_bpe():
     """
-    Train BPE on the tinystories dataset.
+    Train BPE on the OpenWebText dataset.
     """
     start = time.time()
     
     vocab, merges = train_bpe(
-        input_path="../data/TinyStoriesV2-GPT4-train.txt",
-        vocab_size=10_000,
+        input_path="../data/owt_train.txt",
+        vocab_size=32_000,
         special_tokens=["<|endoftext|>"],
         num_processes=32,
         debug=True)
