@@ -179,10 +179,9 @@ def train_bpe(
 
 if __name__ == "__main__":
     vocab, merges = train_bpe(
-        input_path="data/owt_train.txt",
-        #input_path="tests/fixtures/tinystories_sample_5M.txt",
+        input_path="tests/fixtures/tinystories_sample_5M.txt",
         vocab_size=1000,
         special_tokens=[SPECIAL_TOKEN],
         num_processes=16,
-        batch_size=64,
+        batch_size=1,
         debug=True)
