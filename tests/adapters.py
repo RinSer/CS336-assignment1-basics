@@ -594,4 +594,5 @@ def run_train_bpe(
         vocab_size=vocab_size,
         special_tokens=special_tokens,
         num_processes=16,
+        batch_size=2,
     )

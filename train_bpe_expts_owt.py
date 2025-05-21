@@ -13,7 +13,7 @@ def run_train_bpe():
     start = time.time()
     
     vocab, merges = train_bpe(
-        input_path="../data/owt_train.txt",
+        input_path="./data/owt_train.txt",
         vocab_size=32_000,
         special_tokens=["<|endoftext|>"],
         num_processes=16,

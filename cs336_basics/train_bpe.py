@@ -1,7 +1,7 @@
 import regex as re
 import time
 from collections import defaultdict
-from multiprocessing import Pool, Manager
+from multiprocessing import Pool
 from cs336_basics.pretokenization_example import find_chunk_boundaries
 
 
@@ -70,6 +70,7 @@ def train_bpe(
     vocab_size: int,
     special_tokens: list[str],
     num_processes: int = 1,
+    batch_size: int = 1,
     debug: bool = False) -> tuple[dict[int, bytes], list[tuple[bytes, bytes]]]:
     """
     Train a BPE tokenizer on the input file.
@@ -106,29 +107,35 @@ def train_bpe(
 
     # Pre-tokenize the input file
     if num_processes > 1:
-        with Manager() as manager, Pool(num_processes) as pool:
-            results = []
-            with open(input_path, "rb") as f:
-                boundaries = find_chunk_boundaries(
-                    f, num_processes, SPECIAL_TOKEN.encode("utf-8"))
-                for start, end in zip(boundaries[:-1], boundaries[1:]):
-                    f.seek(start)
-                    chunk = f.read(end - start).decode("utf-8", errors="ignore")
-                    result = pool.apply_async(
-                        pre_tokenize_async,
-                        (chunk, special_tokens)
-                    )
-                    results.append(result)
-            pool.close()
-            pool.join()
-            for result in results:
-                p, w, pw = result.get()
-                for pair, count in p.items():
-                    pairs[pair] += count
-                for word, count in w.items():
-                    words[word] += count
-                for pair, word_set in pw.items():
-                    pair2words[pair].update(word_set)
+        with open(input_path, "rb") as f:
+            boundaries = find_chunk_boundaries(
+                f, num_processes, SPECIAL_TOKEN.encode("utf-8"))
+            boundaries = list(zip(boundaries[:-1], boundaries[1:]))
+            for i in range(batch_size):
+                if debug:
+                    print(f"Running batch {i + 1} of {batch_size}")
+                batch = i * num_processes
+                with Pool(num_processes) as pool:
+                    results = []
+                    for start, end in boundaries[batch:batch + num_processes]:
+                        f.seek(start)
+                        chunk = f.read(end - start).decode("utf-8", errors="ignore")
+                        result = pool.apply_async(
+                            pre_tokenize_async,
+                            (chunk, special_tokens)
+                        )
+                        results.append(result)
+                    pool.close()
+                    for result in results:
+                        p, w, pw = result.get()
+                        for pair, count in p.items():
+                            pairs[pair] += count
+                        for word, count in w.items():
+                            words[word] += count
+                        for pair, word_set in pw.items():
+                            pair2words[pair].update(word_set)
+                if debug:
+                    print(f"Completed batch {i + 1} of {batch_size}")
     else:
         with open(input_path, "rb") as f:
             boundaries = find_chunk_boundaries(
