@@ -1,4 +1,5 @@
 import regex as re
+import sys
 import time
 from collections import defaultdict
 from multiprocessing import Pool
@@ -109,7 +110,7 @@ def train_bpe(
     if num_processes > 1:
         with open(input_path, "rb") as f:
             boundaries = find_chunk_boundaries(
-                f, num_processes, SPECIAL_TOKEN.encode("utf-8"))
+                f, batch_size * num_processes, SPECIAL_TOKEN.encode("utf-8"))
             boundaries = list(zip(boundaries[:-1], boundaries[1:]))
             for i in range(batch_size):
                 if debug:
@@ -120,6 +121,8 @@ def train_bpe(
                     for start, end in boundaries[batch:batch + num_processes]:
                         f.seek(start)
                         chunk = f.read(end - start).decode("utf-8", errors="ignore")
+                        if debug:
+                            print(f"Processing chunk size {sys.getsizeof(chunk)} bytes")
                         result = pool.apply_async(
                             pre_tokenize_async,
                             (chunk, special_tokens)
@@ -176,8 +179,10 @@ def train_bpe(
 
 if __name__ == "__main__":
     vocab, merges = train_bpe(
-        input_path="tests/fixtures/tinystories_sample_5M.txt",
+        input_path="data/owt_train.txt",
+        #input_path="tests/fixtures/tinystories_sample_5M.txt",
         vocab_size=1000,
         special_tokens=[SPECIAL_TOKEN],
         num_processes=16,
+        batch_size=64,
         debug=True)

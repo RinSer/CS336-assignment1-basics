@@ -17,6 +17,7 @@ def run_train_bpe():
         vocab_size=32_000,
         special_tokens=["<|endoftext|>"],
         num_processes=16,
+        batch_size=32,
         debug=True)
     
     print(f"Time taken to train BPE: {time.time() - start:.2f} seconds")
