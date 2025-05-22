@@ -4,42 +4,10 @@ import time
 from collections import defaultdict
 from multiprocessing import Pool
 from cs336_basics.pretokenization_example import find_chunk_boundaries
+from cs336_basics.tokenizer_word import Word, PAT
 
 
 SPECIAL_TOKEN = "<|endoftext|>"
-PAT = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
-
-
-class Word:
-    def __init__(self, word: bytes):
-        self.word = word
-        self.tokens = tuple([bytes([w]) for w in word])
-
-    def __eq__(self, other):
-        return self.word.__eq__(other.word)
-    
-    def __hash__(self):
-        return hash(self.word)
-    
-    def __len__(self):
-        return len(self.word)
-    
-    def pairs(self) -> list[tuple[bytes, bytes]]:
-        return [
-            (self.tokens[i], self.tokens[i + 1]) 
-            for i in range(len(self.tokens) - 1)
-        ]
-    
-    def merge(self, pair: tuple[bytes, bytes], merged: bytes) -> None:
-        new_tokens, i = [], 0
-        while i < len(self.tokens):
-            if self.tokens[i:i + 2] == pair:
-                new_tokens.append(merged)
-                i += 2
-            else:
-                new_tokens.append(self.tokens[i])
-                i += 1
-        self.tokens = tuple(new_tokens)
 
 
 def pre_tokenize_async(
@@ -49,7 +17,7 @@ def pre_tokenize_async(
     pairs: dict[bytes, int] = defaultdict(int)
     words: dict[Word, int] = defaultdict(int)
     pair2words: dict[bytes, set[Word]] = defaultdict(set)
-    docs = re.split(re.escape("|".join(special_tokens)), text)
+    docs = re.split("|".join([re.escape(s) for s in special_tokens]), text)
     for doc in docs:
         if doc.strip():  # Ignore empty parts
             for word in re.finditer(PAT, doc):
@@ -91,7 +59,7 @@ def train_bpe(
     pair2words: dict[bytes, set[Word]] = defaultdict(set)
 
     def pre_tokenize(text: str) -> None:
-        docs = re.split(re.escape("|".join(special_tokens)), text)
+        docs = re.split("|".join([re.escape(s) for s in special_tokens]), text)
         for doc in docs:
             if doc.strip():  # Ignore empty parts
                 for word in re.finditer(PAT, doc):
