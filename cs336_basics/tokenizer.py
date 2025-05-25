@@ -1,3 +1,4 @@
+import pickle
 import regex as re
 from typing import Iterable, Iterator
 import json
@@ -25,13 +26,22 @@ class Tokenizer:
     def from_files(cls, vocab_filepath, merges_filepath, special_tokens=None):
         with open(vocab_filepath) as f:
             vocab = json.load(f)
+        vocab = {v: k.encode("utf-8") for k, v in vocab.items()}
         merges = []
         with open(merges_filepath) as m:
             for line in m:
                 cleaned_line = line.rstrip()
                 if cleaned_line and len(cleaned_line.split(" ")) == 2:
-                    merges.append(tuple(cleaned_line.split(" ")))
+                    merges.append(tuple([
+                        b.encode("utf-8") for b in cleaned_line.split(" ")
+                    ]))
         return Tokenizer(vocab, merges, special_tokens)
+    
+    @classmethod
+    def from_pickles(cls, pickle_filepath, special_tokens=None):
+        with open(pickle_filepath, "rb") as f:
+            data = pickle.load(f)
+            return Tokenizer(data["vocab"], data["merges"], special_tokens)
     
     def encode(self, text: str) -> list[int]:
         res = []
@@ -65,11 +75,9 @@ class Tokenizer:
         return res
 
     def encode_iterable(self, iterable: Iterable[str]) -> Iterator[int]:
-        chunk = ""
         for part in self._load_until_special(iterable):
-            chunk += part
-        for encoded in self.encode(chunk):
-            yield encoded
+            for encoded in self.encode(part):
+                yield encoded
 
     def decode(self, ids: list[int]) -> str:
         return (b"".join([
