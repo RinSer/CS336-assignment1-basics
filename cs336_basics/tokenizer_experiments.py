@@ -1,5 +1,3 @@
-import numpy as np
-import pickle
 import time
 from cs336_basics.train_bpe import SPECIAL_TOKEN
 from cs336_basics.tokenizer import Tokenizer
@@ -87,12 +85,10 @@ def encode(data_path: str, input_file: str, output_file: str):
     )
     print(f"Encoding {input_file} with {data_path} tokenizer")
     start = time.time()
-    with open(input_file, "r") as f:
-        encoded = list()
-        for token in tokenizer.encode_iterable(f.read()):
-            encoded.append(np.uint16(token))
-        with open(output_file, "wb") as p:
-            pickle.dump(encoded, p, protocol=pickle.HIGHEST_PROTOCOL)
+    with open(input_file, "r") as i:
+        with open(output_file, "w") as o:
+            for token in tokenizer.encode_iterable(i.read()):
+                o.write(str(token) + "\n")
     print(f"Encoding {input_file} took {time.time() - start:.2f} seconds")
 
 
@@ -100,12 +96,12 @@ def encode_tinystories():
     encode(
         "./bpe_tinystories.pkl",
         "../data/TinyStoriesV2-GPT4-valid.txt",
-        "./tinystories_valid_encoded.pkl",
+        "./tinystories_valid_encoded.txt",
     )
     encode(
         "./bpe_tinystories.pkl",
         "../data/TinyStoriesV2-GPT4-train.txt",
-        "./tinystories_train_encoded.pkl",
+        "./tinystories_train_encoded.txt",
     )
 
 
@@ -113,12 +109,12 @@ def encode_owt():
     encode(
         "./bpe_expts_owt.pkl",
         "../data/owt_valid.txt",
-        "./owt_valid_encoded.pkl",
+        "./owt_valid_encoded.txt",
     )
     encode(
         "./bpe_expts_owt.pkl",
         "../data/owt_train.txt",
-        "./owt_train_encoded.pkl",
+        "./owt_train_encoded.txt",
     )
 
 
