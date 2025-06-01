@@ -3,6 +3,9 @@ from __future__ import annotations
 import os
 from typing import IO, Any, BinaryIO
 from collections.abc import Iterable
+import cs336_basics.embedding
+import cs336_basics.linear
+import cs336_basics.rmsnorm
 import cs336_basics.tokenizer
 import cs336_basics.train_bpe
 from jaxtyping import Float, Int
@@ -32,7 +35,7 @@ def run_linear(
         Float[Tensor, "... d_out"]: The transformed output of your linear module.
     """
 
-    raise NotImplementedError
+    return cs336_basics.linear.Linear(d_in, d_out, weights=weights).forward(in_features)
 
 
 def run_embedding(
@@ -54,7 +57,7 @@ def run_embedding(
         Float[Tensor, "... d_model"]: Batch of embeddings returned by your Embedding layer.
     """
 
-    raise NotImplementedError
+    return cs336_basics.embedding.Embedding(vocab_size, d_model, weights=weights).forward(token_ids)
 
 
 def run_swiglu(
@@ -381,7 +384,7 @@ def run_rmsnorm(
         Float[Tensor,"... d_model"]: Tensor of with the same shape as `in_features` with the output of running
         RMSNorm of the `in_features`.
     """
-    raise NotImplementedError
+    return cs336_basics.rmsnorm.RMSNorm(d_model, eps, weights=weights).forward(in_features)
 
 
 def run_silu(in_features: Float[Tensor, " ..."]) -> Float[Tensor, " ..."]:
