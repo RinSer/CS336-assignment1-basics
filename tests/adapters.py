@@ -5,7 +5,10 @@ from typing import IO, Any, BinaryIO
 from collections.abc import Iterable
 import cs336_basics.embedding
 import cs336_basics.linear
+import cs336_basics.positionwise_feedforward
 import cs336_basics.rmsnorm
+import cs336_basics.rope
+import cs336_basics.softmax
 import cs336_basics.tokenizer
 import cs336_basics.train_bpe
 from jaxtyping import Float, Int
@@ -89,7 +92,9 @@ def run_swiglu(
     # swiglu.w1.weight.data = w1_weight
     # swiglu.w2.weight.data = w2_weight
     # swiglu.w3.weight.data = w3_weight
-    raise NotImplementedError
+    return cs336_basics.positionwise_feedforward.swiglu(
+        d_model, d_ff, w1_weight, w2_weight, w3_weight, in_features
+    )
 
 
 def run_scaled_dot_product_attention(
@@ -206,7 +211,9 @@ def run_rope(
     Returns:
         Float[Tensor, " ... sequence_length d_k"]: Tensor with RoPEd input.
     """
-    raise NotImplementedError
+    return cs336_basics.rope.RotaryPositionalEmbedding(
+        theta, d_k, max_seq_len
+    ).forward(in_query_or_key, token_positions)
 
 
 def run_transformer_block(
@@ -437,7 +444,7 @@ def run_softmax(in_features: Float[Tensor, " ..."], dim: int) -> Float[Tensor, "
         Float[Tensor, "..."]: Tensor of with the same shape as `in_features` with the output of
         softmax normalizing the specified `dim`.
     """
-    raise NotImplementedError
+    return cs336_basics.softmax.softmax(in_features, dim=dim)
 
 
 def run_cross_entropy(inputs: Float[Tensor, " batch_size vocab_size"], targets: Int[Tensor, " batch_size"]) -> Float[Tensor, ""]:
