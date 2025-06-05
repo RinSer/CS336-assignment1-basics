@@ -8,6 +8,7 @@ import cs336_basics.linear
 import cs336_basics.positionwise_feedforward
 import cs336_basics.rmsnorm
 import cs336_basics.rope
+import cs336_basics.scaled_dot_product_attention
 import cs336_basics.softmax
 import cs336_basics.tokenizer
 import cs336_basics.train_bpe
@@ -115,7 +116,9 @@ def run_scaled_dot_product_attention(
     Returns:
         Float[Tensor, " ... queries d_v"]: Output of SDPA
     """
-    raise NotImplementedError
+    return cs336_basics.scaled_dot_product_attention.scaled_dot_product_attention(
+        Q, K, V, mask
+    )
 
 
 def run_multihead_self_attention(
