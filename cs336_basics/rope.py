@@ -8,7 +8,7 @@ class RotaryPositionalEmbedding:
 
     def __init__(
         self, 
-        theta: float, 
+        theta: float,
         d_k: int, 
         max_seq_len: int, 
         device=None):

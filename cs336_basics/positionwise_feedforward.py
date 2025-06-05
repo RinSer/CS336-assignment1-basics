@@ -33,10 +33,12 @@ def swiglu(
     # Project input to d_ff using W1 and W3
     W1x = einops.einsum(in_features, w1_weight, "... d_model, d_ff d_model -> ... d_ff")
     W3x = einops.einsum(in_features, w3_weight, "... d_model, d_ff d_model -> ... d_ff")
-    # Apply SiLU activation to W1x
-    SiLU = W1x * torch.sigmoid(W1x)
     # Elementwise product
-    gated = SiLU * W3x
+    gated = silu(W1x) * W3x
     # Project back to d_model using W2
     output = einops.einsum(gated, w2_weight, "... d_ff, d_model d_ff -> ... d_model")
     return output
+
+
+def silu(tensor: Float[torch.Tensor, "..."]) -> Float[torch.Tensor, " ..."]:
+    return tensor * torch.sigmoid(tensor)

@@ -5,6 +5,7 @@ from typing import IO, Any, BinaryIO
 from collections.abc import Iterable
 import cs336_basics.embedding
 import cs336_basics.linear
+import cs336_basics.multihead_self_attention
 import cs336_basics.positionwise_feedforward
 import cs336_basics.rmsnorm
 import cs336_basics.rope
@@ -152,7 +153,13 @@ def run_multihead_self_attention(
         Float[Tensor, " ... sequence_length d_out"]: Tensor with the output of running your optimized, batched multi-headed attention
         implementation with the given QKV projection weights and input features.
     """
-    raise NotImplementedError
+    return cs336_basics.multihead_self_attention.MultiheadSelfAttention(
+        d_model, num_heads, 
+        q_proj_weight=q_proj_weight, 
+        k_proj_weight=k_proj_weight,
+        v_proj_weight=v_proj_weight,
+        o_proj_weight=o_proj_weight
+    ).forward(in_features)
 
 
 def run_multihead_self_attention_with_rope(
@@ -192,7 +199,13 @@ def run_multihead_self_attention_with_rope(
         Float[Tensor, " ... sequence_length d_out"]: Tensor with the output of running your optimized, batched multi-headed attention
         implementation with the given QKV projection weights and input features.
     """
-    raise NotImplementedError
+    return cs336_basics.multihead_self_attention.MultiheadSelfAttention(
+        d_model, num_heads, theta=theta, max_seq_len=max_seq_len,
+        q_proj_weight=q_proj_weight,
+        k_proj_weight=k_proj_weight,
+        v_proj_weight=v_proj_weight,
+        o_proj_weight=o_proj_weight
+    ).forward(in_features, token_positions)
 
 
 def run_rope(
@@ -408,7 +421,7 @@ def run_silu(in_features: Float[Tensor, " ..."]) -> Float[Tensor, " ..."]:
         Float[Tensor,"..."]: of with the same shape as `in_features` with the output of applying
         SiLU to each element.
     """
-    raise NotImplementedError
+    return cs336_basics.positionwise_feedforward.silu(in_features)
 
 
 def run_get_batch(
