@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from typing import IO, Any, BinaryIO
 from collections.abc import Iterable
+import cs336_basics.cross_entropy
 import cs336_basics.embedding
 import cs336_basics.linear
 import cs336_basics.multihead_self_attention
@@ -476,7 +477,7 @@ def run_cross_entropy(inputs: Float[Tensor, " batch_size vocab_size"], targets: 
     Returns:
         Float[Tensor, ""]: The average cross-entropy loss across examples.
     """
-    raise NotImplementedError
+    return cs336_basics.cross_entropy.cross_entropy(inputs, targets)
 
 
 def run_gradient_clipping(parameters: Iterable[torch.nn.Parameter], max_l2_norm: float) -> None:
