@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from typing import IO, Any, BinaryIO
 from collections.abc import Iterable
+import cs336_basics.adamw
 import cs336_basics.cross_entropy
 import cs336_basics.embedding
 import cs336_basics.linear
@@ -20,6 +21,7 @@ import numpy.typing as npt
 import torch
 from torch import Tensor
 import cs336_basics
+import cs336_basics.transformer_block
 
 
 def run_linear(
@@ -303,7 +305,9 @@ def run_transformer_block(
         Float[Tensor, "batch sequence_length d_model"] Tensor with the output of
         running the Transformer block on the input features while using RoPE.
     """
-    raise NotImplementedError
+    return cs336_basics.transformer_block.TransformerBlock(
+        d_model, num_heads, d_ff, max_seq_len, theta, weights=weights 
+    ).forward(in_features)
 
 
 def run_transformer_lm(
@@ -496,7 +500,7 @@ def get_adamw_cls() -> type[torch.optim.Optimizer]:
     """
     Returns a torch.optim.Optimizer that implements AdamW.
     """
-    raise NotImplementedError
+    return cs336_basics.adamw.AdamW
 
 
 def run_get_lr_cosine_schedule(
