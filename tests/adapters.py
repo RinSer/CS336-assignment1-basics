@@ -6,6 +6,9 @@ from collections.abc import Iterable
 import cs336_basics.adamw
 import cs336_basics.cross_entropy
 import cs336_basics.embedding
+import cs336_basics.gradient_clipping
+import cs336_basics.learning_rate_schedule
+import cs336_basics.learning_rate_tuning
 import cs336_basics.linear
 import cs336_basics.multihead_self_attention
 import cs336_basics.positionwise_feedforward
@@ -335,7 +338,7 @@ def run_transformer_lm(
         num_heads (int): Number of heads to use in multi-headed attention. `d_model` must be
             evenly divisible by `num_heads`.
         d_ff (int): Dimensionality of the feed-forward inner layer (section 3.3).
-        rope_theta (float): The RoPE $\Theta$ parameter.
+        rope_theta (float): The RoPE Theta parameter.
         weights (dict[str, Tensor]): 
             State dict of our reference implementation. {num_layers} refers to an
             integer between `0` and `num_layers - 1` (the layer index).
@@ -498,7 +501,7 @@ def run_gradient_clipping(parameters: Iterable[torch.nn.Parameter], max_l2_norm:
 
     The gradients of the parameters (parameter.grad) should be modified in-place.
     """
-    raise NotImplementedError
+    return cs336_basics.gradient_clipping.gradient_clipping(parameters, max_l2_norm)
 
 
 def get_adamw_cls() -> type[torch.optim.Optimizer]:
@@ -533,7 +536,10 @@ def run_get_lr_cosine_schedule(
     Returns:
         Learning rate at the given iteration under the specified schedule.
     """
-    raise NotImplementedError
+    return cs336_basics.learning_rate_schedule.learning_rate_schedule(
+        t=it, lr_max=max_learning_rate, lr_min=min_learning_rate, 
+        t_w=warmup_iters, t_c=cosine_cycle_iters
+    )
 
 
 def run_save_checkpoint(
