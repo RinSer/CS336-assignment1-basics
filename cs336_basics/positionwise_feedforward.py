@@ -54,6 +54,12 @@ class SwiGLU(torch.nn.Module):
                     dtype=dtype
                 )
             )
+        if w1_weight is None:
+            torch.nn.init.xavier_uniform_(self.w1)
+        if w2_weight is None:
+            torch.nn.init.xavier_uniform_(self.w2)
+        if w3_weight is None:
+            torch.nn.init.xavier_uniform_(self.w3)
 
 
     def forward(

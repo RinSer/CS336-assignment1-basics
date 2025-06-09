@@ -1,4 +1,6 @@
 import time
+import numpy as np
+
 from cs336_basics.train_bpe import SPECIAL_TOKEN
 from cs336_basics.tokenizer import Tokenizer
 
@@ -86,40 +88,40 @@ def encode(data_path: str, input_file: str, output_file: str):
     print(f"Encoding {input_file} with {data_path} tokenizer")
     start = time.time()
     with open(input_file, "r") as i:
-        with open(output_file, "w") as o:
+        with open(output_file, "wb") as o:
             for token in tokenizer.encode_iterable(i.read()):
-                o.write(str(token) + "\n")
+                np.array([token], dtype=np.uint16).tofile(o)
     print(f"Encoding {input_file} took {time.time() - start:.2f} seconds")
 
 
 def encode_tinystories():
     encode(
-        "./bpe_tinystories.pkl",
+        "../data/bpe_tinystories.pkl",
         "../data/TinyStoriesV2-GPT4-valid.txt",
-        "./tinystories_valid_encoded.txt",
+        "../data/tinystories_valid_encoded.npy",
     )
     encode(
-        "./bpe_tinystories.pkl",
+        "../data/bpe_tinystories.pkl",
         "../data/TinyStoriesV2-GPT4-train.txt",
-        "./tinystories_train_encoded.txt",
+        "../data/tinystories_train_encoded.npy",
     )
 
 
 def encode_owt():
     encode(
-        "./bpe_expts_owt.pkl",
+        "../data/bpe_expts_owt.pkl",
         "../data/owt_valid.txt",
-        "./owt_valid_encoded.txt",
+        "../data/owt_valid_encoded.npy",
     )
     encode(
-        "./bpe_expts_owt.pkl",
+        "../data/bpe_expts_owt.pkl",
         "../data/owt_train.txt",
-        "./owt_train_encoded.txt",
+        "../data/owt_train_encoded.npy",
     )
 
 
 if __name__ == "__main__":
     # sample_docs()
     # throughput()
-    # encode_tinystories()
-    encode_owt()
+    encode_tinystories()
+    # encode_owt()

@@ -35,21 +35,33 @@ class MultiheadSelfAttention(torch.nn.Module):
             v_proj_weight (Float[Tensor, "d_k d_in"] | None): Weights for the V projection
             o_proj_weight (Float[Tensor, "d_model d_v"] | None): Weights for the output projection
         """
+        super().__init__()
         self.d_model = d_model
         self.num_heads = num_heads
         d_k = d_model // num_heads
         Q_weights: Float[Tensor, "d_model d_model"] = q_proj_weight if q_proj_weight is not None else \
-            torch.nn.Parameter(torch.empty(self.d_model, d_model), device=device, dtype=dtype)
+            torch.empty((self.d_model, d_model), device=device, dtype=dtype)
         K_weights: Float[Tensor, "d_model d_model"] = k_proj_weight if k_proj_weight is not None else \
-            torch.nn.Parameter(torch.empty(self.d_model, d_model), device=device, dtype=dtype)
+            torch.empty((self.d_model, d_model), device=device, dtype=dtype)
         V_weights: Float[Tensor, "d_model d_model"] = v_proj_weight if v_proj_weight is not None else \
-            torch.nn.Parameter(torch.empty(self.d_model, d_model), device=device, dtype=dtype)
+            torch.empty((self.d_model, d_model), device=device, dtype=dtype)
         self.OW: Float[Tensor, "d_model d_model"] = o_proj_weight if o_proj_weight is not None else \
-            torch.nn.Parameter(torch.empty(d_model, self.d_model), device=device, dtype=dtype)
+            torch.nn.Parameter(torch.empty((d_model, self.d_model), device=device, dtype=dtype))
+        if q_proj_weight is None:
+            torch.nn.init.xavier_uniform_(Q_weights)
+        if k_proj_weight is None:
+            torch.nn.init.xavier_uniform_(K_weights)
+        if v_proj_weight is None:
+            torch.nn.init.xavier_uniform_(V_weights)
+        if o_proj_weight is None:
+            torch.nn.init.xavier_uniform_(self.OW)
         # Divide weights into num_heads (h) batches
-        self.QW = einops.rearrange(Q_weights, '(h d_k) d_in -> h d_k d_in', h=self.num_heads)
-        self.KW = einops.rearrange(K_weights, '(h d_k) d_in -> h d_k d_in', h=self.num_heads)
-        self.VW = einops.rearrange(V_weights, '(h d_k) d_in -> h d_k d_in', h=self.num_heads)
+        self.QW = torch.nn.Parameter(
+            einops.rearrange(Q_weights, '(h d_k) d_in -> h d_k d_in', h=self.num_heads))
+        self.KW = torch.nn.Parameter(
+            einops.rearrange(K_weights, '(h d_k) d_in -> h d_k d_in', h=self.num_heads))
+        self.VW = torch.nn.Parameter(
+            einops.rearrange(V_weights, '(h d_k) d_in -> h d_k d_in', h=self.num_heads))
         self.rope = None
         if theta is not None and max_seq_len is not None:
             self.rope = RotaryPositionalEmbedding(theta, d_k, max_seq_len, device)

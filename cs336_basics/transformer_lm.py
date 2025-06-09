@@ -95,7 +95,7 @@ class TransformerLM(torch.nn.Module):
                 weights={
                     k.replace(f"layers.{i}.", ""): v for k, v in weights.items() 
                     if k.startswith(f"layers.{i}.")
-                }
+                } if weights else None
             ) for i in range(num_layers)
         ])
         self.ln_final = RMSNorm(
