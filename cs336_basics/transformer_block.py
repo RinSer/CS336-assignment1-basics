@@ -3,10 +3,10 @@ from jaxtyping import Float, Int
 
 from .rmsnorm import RMSNorm
 from .multihead_self_attention import MultiheadSelfAttention
-from .positionwise_feedforward import swiglu
+from .positionwise_feedforward import SwiGLU
 
 
-class TransformerBlock:
+class TransformerBlock(torch.nn.Module):
 
     def __init__(
         self,
@@ -69,11 +69,12 @@ class TransformerBlock:
                 applied in the transformer block.
                 Shape is (d_model,).
         """
+        super().__init__()
         self.d_model = d_model
         self.d_ff = d_ff
-        self.rmsnorm1 = RMSNorm(d_model, device=device, dtype=dtype, 
+        self.ln1 = RMSNorm(d_model, device=device, dtype=dtype, 
             weights=weights["ln1.weight"] if weights and "ln1.weight" in weights else None)
-        self.mhsa = MultiheadSelfAttention(d_model, num_heads, device=device, dtype=dtype,
+        self.attn = MultiheadSelfAttention(d_model, num_heads, device=device, dtype=dtype,
             theta=theta, max_seq_len=max_seq_len,
             q_proj_weight=weights["attn.q_proj.weight"] 
                 if weights and "attn.q_proj.weight" in weights else None,
@@ -84,32 +85,14 @@ class TransformerBlock:
             o_proj_weight=weights["attn.output_proj.weight"] 
                 if weights and "attn.output_proj.weight" in weights else None,
         )
-        self.rmsnorm2 = RMSNorm(d_model, device=device, dtype=dtype, 
+        self.ln2 = RMSNorm(d_model, device=device, dtype=dtype, 
             weights=weights["ln2.weight"] if weights and "ln2.weight" in weights else None)
-        self.w1 = weights["ffn.w1.weight"] if weights and "ffn.w1.weight" in weights else \
-            torch.nn.Parameter(
-                torch.empty(
-                    (d_model, d_ff),
-                    device=device,
-                    dtype=dtype
-                )
-            )
-        self.w2 = weights["ffn.w2.weight"] if weights and "ffn.w2.weight" in weights else \
-            torch.nn.Parameter(
-                torch.empty(
-                    (d_ff, d_model),
-                    device=device,
-                    dtype=dtype
-                )
-            )
-        self.w3 = weights["ffn.w3.weight"] if weights and "ffn.w3.weight" in weights else \
-            torch.nn.Parameter(
-                torch.empty(
-                    (d_model, d_ff),
-                    device=device,
-                    dtype=dtype
-                )
-            )
+        self.ffn = SwiGLU(
+            d_model, d_ff, device=device, dtype=dtype, 
+            w1_weight=weights["ffn.w1.weight"] if weights and "ffn.w1.weight" in weights else None,
+            w2_weight=weights["ffn.w2.weight"] if weights and "ffn.w2.weight" in weights else None,
+            w3_weight=weights["ffn.w3.weight"] if weights and "ffn.w3.weight" in weights else None,
+        )
 
     def forward(
         self,
@@ -118,25 +101,18 @@ class TransformerBlock:
     ) -> Float[torch.Tensor, " batch sequence_length d_model"]:
         x = in_features
 
-        rmsnorm1 = self.rmsnorm1.forward(x)
+        ln1 = self.ln1.forward(x)
 
         if token_positions is None:
             seq_len = x.shape[-2]
             token_positions = torch.arange(seq_len, device=x.device)
-        mhsa = self.mhsa.forward(rmsnorm1, token_positions)
+        attn = self.attn.forward(ln1, token_positions)
 
-        x = x + mhsa
+        x = x + attn
 
-        rmsnorm2 = self.rmsnorm2.forward(x)
+        ln2 = self.ln2.forward(x)
 
-        ff = swiglu(
-            self.d_model,
-            self.d_ff,
-            self.w1,
-            self.w2,
-            self.w3,
-            rmsnorm2
-        )
+        ff = self.ffn.forward(ln2)
 
         x = x + ff
         

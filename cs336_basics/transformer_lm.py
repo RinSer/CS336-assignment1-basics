@@ -7,7 +7,7 @@ from .rmsnorm import RMSNorm
 from .linear import Linear
 
 
-class TransformerLM:
+class TransformerLM(torch.nn.Module):
 
     def __init__(
         self,
@@ -81,13 +81,14 @@ class TransformerLM:
                     Weights of the language model output embedding.
                     Shape is (vocab_size, d_model).
         """
-        self.embedding = Embedding(
+        super().__init__()
+        self.token_embeddings = Embedding(
             vocab_size, d_model,
             device=device, dtype=dtype,
             weights=weights["token_embeddings.weight"] \
                 if weights and "token_embeddings.weight" in weights else None
         )
-        self.transformer_blocks = [
+        self.layers = torch.nn.ModuleList([
             TransformerBlock(
                 d_model, num_heads, d_ff, context_length, theta=rope_theta,
                 device=device, dtype=dtype,
@@ -96,13 +97,13 @@ class TransformerLM:
                     if k.startswith(f"layers.{i}.")
                 }
             ) for i in range(num_layers)
-        ]
-        self.fin_norm = RMSNorm(
+        ])
+        self.ln_final = RMSNorm(
             d_model, device=device, dtype=dtype, 
             weights=weights["ln_final.weight"] \
                 if weights and "ln_final.weight" in weights else None
         )
-        self.linear = Linear(
+        self.lm_head = Linear(
             d_model, vocab_size,
             device=device, dtype=dtype,
             weights=weights["lm_head.weight"] \
@@ -125,9 +126,9 @@ class TransformerLM:
             Float[Tensor, "batch_size sequence_length vocab_size"]: Tensor with the predicted unnormalized
             next-word distribution for each token.
         """
-        x = self.embedding.forward(in_indices)
-        for block in self.transformer_blocks:
+        x = self.token_embeddings.forward(in_indices)
+        for block in self.layers:
             x = block.forward(x)
-        x = self.fin_norm.forward(x)
-        x = self.linear.forward(x)
+        x = self.ln_final.forward(x)
+        x = self.lm_head.forward(x)
         return x

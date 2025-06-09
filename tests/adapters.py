@@ -4,7 +4,9 @@ import os
 from typing import IO, Any, BinaryIO
 from collections.abc import Iterable
 import cs336_basics.adamw
+import cs336_basics.checkpointing
 import cs336_basics.cross_entropy
+import cs336_basics.data_loading
 import cs336_basics.embedding
 import cs336_basics.gradient_clipping
 import cs336_basics.learning_rate_schedule
@@ -101,9 +103,12 @@ def run_swiglu(
     # swiglu.w1.weight.data = w1_weight
     # swiglu.w2.weight.data = w2_weight
     # swiglu.w3.weight.data = w3_weight
-    return cs336_basics.positionwise_feedforward.swiglu(
-        d_model, d_ff, w1_weight, w2_weight, w3_weight, in_features
-    )
+    return cs336_basics.positionwise_feedforward.SwiGLU(
+        d_model, d_ff, 
+        w1_weight=w1_weight, 
+        w2_weight=w2_weight, 
+        w3_weight=w3_weight,
+    ).forward(in_features)
 
 
 def run_scaled_dot_product_attention(
@@ -457,7 +462,7 @@ def run_get_batch(
         is the sampled input sequences, and the second tuple item is the corresponding
         language modeling labels.
     """
-    raise NotImplementedError
+    return cs336_basics.data_loading.data_loading(dataset, batch_size, context_length, device)
 
 
 def run_softmax(in_features: Float[Tensor, " ..."], dim: int) -> Float[Tensor, " ..."]:
@@ -558,7 +563,7 @@ def run_save_checkpoint(
             we've completed.
         out (str | os.PathLike | BinaryIO | IO[bytes]): Path or file-like object to serialize the model, optimizer, and iteration to.
     """
-    raise NotImplementedError
+    return cs336_basics.checkpointing.save_checkpoint(model, optimizer, iteration, out)
 
 
 def run_load_checkpoint(
@@ -579,7 +584,7 @@ def run_load_checkpoint(
     Returns:
         int: the previously-serialized number of iterations.
     """
-    raise NotImplementedError
+    return cs336_basics.checkpointing.load_checkpoint(src, model, optimizer)
 
 
 def get_tokenizer(
