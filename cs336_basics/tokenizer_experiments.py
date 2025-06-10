@@ -89,8 +89,8 @@ def encode(data_path: str, input_file: str, output_file: str):
     start = time.time()
     with open(input_file, "r") as i:
         with open(output_file, "wb") as o:
-            for token in tokenizer.encode_iterable(i.read()):
-                np.array([token], dtype=np.uint16).tofile(o)
+            for tokens in tokenizer.encode_iterable(i.read()):
+                tokens.tofile(o)
     print(f"Encoding {input_file} took {time.time() - start:.2f} seconds")
 
 
@@ -124,4 +124,4 @@ if __name__ == "__main__":
     # sample_docs()
     # throughput()
     encode_tinystories()
-    # encode_owt()
+    encode_owt()

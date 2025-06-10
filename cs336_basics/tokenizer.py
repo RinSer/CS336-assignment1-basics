@@ -1,3 +1,4 @@
+import numpy as np
 import pickle
 import regex as re
 from typing import Iterable, Iterator
@@ -8,10 +9,11 @@ from cs336_basics.tokenizer_word import Word, PAT
 class Tokenizer:
 
     def __init__(self, vocab, merges, special_tokens=None):
-        self.vocab: dict[int, bytes] = vocab
-        self.mapping: dict[bytes, int] = {v:k for k, v in vocab.items()}
-        self.merges: dict[tuple[bytes, bytes], int] = {
-            merge: idx for idx, merge in enumerate(merges)
+        vocab = {np.uint16(k):v for k, v in vocab.items()}
+        self.vocab: dict[np.uint16, bytes] = vocab
+        self.mapping: dict[bytes, np.uint16] = {v:k for k, v in vocab.items()}
+        self.merges: dict[tuple[bytes, bytes], np.uint16] = {
+            merge: np.uint16(idx) for idx, merge in enumerate(merges)
         }
         self.special_tokens: list[str] | None = special_tokens
         if special_tokens:
@@ -43,7 +45,7 @@ class Tokenizer:
             data = pickle.load(f)
             return Tokenizer(data["vocab"], data["merges"], special_tokens)
     
-    def encode(self, text: str) -> list[int]:
+    def encode(self, text: str) -> np.ndarray:
         res = []
         if self.special_tokens:
             resplit = "|".join([
@@ -72,14 +74,13 @@ class Tokenizer:
                             word.merge(best, b"".join(best))
                             pairs = [p for p in word.pairs() if p in self.merges]
                     res.extend([self.mapping[token] for token in word.tokens])
-        return res
+        return np.array(res, dtype=np.uint16)
 
-    def encode_iterable(self, iterable: Iterable[str]) -> Iterator[int]:
+    def encode_iterable(self, iterable: Iterable[str]) -> Iterator[np.ndarray]:
         for part in self._load_until_special(iterable):
-            for encoded in self.encode(part):
-                yield encoded
+            yield self.encode(part)
 
-    def decode(self, ids: list[int]) -> str:
+    def decode(self, ids: list[np.uint16]) -> str:
         return (b"".join([
             self.vocab[token] for token in ids
         ])).decode("utf-8", errors="replace")
