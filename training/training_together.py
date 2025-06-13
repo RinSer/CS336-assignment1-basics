@@ -74,15 +74,8 @@ def training_loop(
 
         optimizer.step()
 
-        if (i + 1) % checkpoints_step == 0:
-            save_checkpoint(checkpoint_path, model, optimizer, i + 1)
-            print(f"Checkpoint saved at iteration {i + 1}, loss: {loss.item()}")
-
-        if (i + 1) % 100 == 0:
-            print(f"Iteration {i + 1}/{num_iterations}, loss: {loss.item()}")
-
         # Validation logging
-        if val_data_path is not None and (i + 1) % val_steps == 0:
+        if val_data_path is not None and (i + 1) % val_steps == 0 or i == num_iterations - 1:
             val_dataset = np.memmap(data_path, mode="r")
             model.eval()
             with torch.no_grad():
@@ -95,12 +88,19 @@ def training_loop(
                 )
                 print(f"Iteration {i + 1}/{num_iterations}, validation loss: {val_loss.item()}")
             model.train()
+
+        if (i + 1) % checkpoints_step == 0 or i == num_iterations - 1:
+            save_checkpoint(model, optimizer, i + 1, checkpoint_path)
+            print(f"Checkpoint saved at iteration {i + 1}, loss: {loss.item()}")
+
+        if (i + 1) % 100 == 0 or i == num_iterations - 1:
+            print(f"Iteration {i + 1}/{num_iterations}, loss: {loss.item()}")
     
 
 if __name__ == "__main__":
-    path_pref = "/mnt/d/Code/CS336/CS336-assignment1-basics/data"
+    path_pref = "./data"
     training_loop(
-        num_iterations=25_000,
+        num_iterations=2500,
         checkpoint_path=f"{path_pref}/test_training_loop.dat",
         checkpoints_step=1000,
         data_path=f"{path_pref}/tinystories_train_encoded.npy",
@@ -112,7 +112,7 @@ if __name__ == "__main__":
         num_heads=16,
         d_ff=1344,
         rope_theta=10_000,
-        device=torch.device("cuda"),
+        device=torch.device("cpu"),
         dtype=torch.float32,
         val_data_path=f"{path_pref}/tinystories_valid_encoded.npy",
         val_steps=1000
