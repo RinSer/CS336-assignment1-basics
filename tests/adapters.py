@@ -19,6 +19,7 @@ import cs336_basics.rope
 import cs336_basics.scaled_dot_product_attention
 import cs336_basics.softmax
 import cs336_basics.tokenizer
+import cs336_basics.tokenizer_test
 import cs336_basics.train_bpe
 from jaxtyping import Float, Int
 
@@ -607,7 +608,7 @@ def get_tokenizer(
     Returns:
         A BPE tokenizer that uses the provided vocab, merges, and special tokens.
     """
-    return cs336_basics.tokenizer.Tokenizer(vocab, merges, special_tokens)
+    return cs336_basics.tokenizer_test.Tokenizer(vocab, merges, special_tokens)
 
 
 def run_train_bpe(
