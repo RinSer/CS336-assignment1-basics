@@ -33,7 +33,7 @@ class SwiGLU(torch.nn.Module):
         self.w1 = w1_weight if w1_weight is not None else \
             torch.nn.Parameter(
                 torch.empty(
-                    (d_model, d_ff),
+                    (d_ff, d_model),
                     device=device,
                     dtype=dtype
                 )
@@ -41,7 +41,7 @@ class SwiGLU(torch.nn.Module):
         self.w2 = w2_weight if w2_weight is not None else \
             torch.nn.Parameter(
                 torch.empty(
-                    (d_ff, d_model),
+                    (d_model, d_ff),
                     device=device,
                     dtype=dtype
                 )
@@ -49,7 +49,7 @@ class SwiGLU(torch.nn.Module):
         self.w3 = w3_weight if w3_weight is not None else \
             torch.nn.Parameter(
                 torch.empty(
-                    (d_model, d_ff),
+                    (d_ff, d_model),
                     device=device,
                     dtype=dtype
                 )

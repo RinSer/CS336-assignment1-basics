@@ -25,7 +25,6 @@ def data_loading(
         is the sampled input sequences, and the second tuple item is the corresponding
         language modeling labels.
     """
-    dataset = np.array(dataset)
     data_len = len(dataset)
     # Randomly sample start indices so that context_length+1 tokens fit
     starts = np.random.randint(0, data_len - context_length, size=batch_size)

@@ -50,13 +50,15 @@ def training_loop(
         eps,
         weight_decay
     )
+    iteration = 0
     if from_save:
         iteration = load_checkpoint(checkpoint_path, model, optimizer)
-    dataset = np.memmap(data_path, mode="r")
+    dataset = np.memmap(data_path, mode="r", dtype=np.uint16)
     model.train()
     for i in range(iteration, num_iterations):
         # Get batch
         x, y = data_loading(dataset, batch_size, context_length, device)
+        x, y = x.int(), y.long()
         # Forward pass
         logits = model.forward(x)
         # Count loss
@@ -85,6 +87,7 @@ def training_loop(
             model.eval()
             with torch.no_grad():
                 val_x, val_y = data_loading(val_dataset, batch_size, context_length, device)
+                val_x, val_y = val_x.int(), val_y.long()
                 val_logits = model.forward(val_x)
                 val_loss = cross_entropy(
                     val_logits.view(-1, val_logits.size(-1)),
@@ -100,8 +103,8 @@ if __name__ == "__main__":
         num_iterations=25_000,
         checkpoint_path=f"{path_pref}/test_training_loop.dat",
         checkpoints_step=1000,
-        data_path=f"{path_pref}/tinystories_train_encoded.txt",
-        batch_size=100,
+        data_path=f"{path_pref}/tinystories_train_encoded.npy",
+        batch_size=10,
         vocab_size=10_000,
         context_length=256,
         d_model=512,
@@ -110,7 +113,7 @@ if __name__ == "__main__":
         d_ff=1344,
         rope_theta=10_000,
         device=torch.device("cuda"),
-        dtype=torch.float16,
-        val_data_path=f"{path_pref}/tinystories_valid_encoded.txt",
+        dtype=torch.float32,
+        val_data_path=f"{path_pref}/tinystories_valid_encoded.npy",
         val_steps=1000
     )
