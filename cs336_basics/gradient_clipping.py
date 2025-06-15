@@ -8,6 +8,7 @@ def gradient_clipping(
     eps: float = 1e-6
 ) -> None:
     # Compute total norm
+    params = list(params)
     total_norm = torch.sqrt(sum(
         (p.grad.data.norm(2) ** 2 for p in params if p.grad is not None)
     ) + eps)
