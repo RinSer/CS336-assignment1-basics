@@ -8,6 +8,7 @@ from cs336_basics.data_loading import data_loading
 from cs336_basics.checkpointing import load_checkpoint, save_checkpoint
 from cs336_basics.cross_entropy import cross_entropy
 from cs336_basics.gradient_clipping import gradient_clipping
+from cs336_basics.learning_rate_schedule import learning_rate_schedule
 
 
 def training_loop(
@@ -28,6 +29,10 @@ def training_loop(
     eps: float = 1e-8,
     weight_decay: float = 1e-2,
     max_norm: int = 1.0,
+    lr_max: float | None = None,
+    lr_min: float | None = None,
+    t_w: int | None = None,
+    t_c: int | None = None,
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
     from_save: bool = False,
@@ -49,7 +54,11 @@ def training_loop(
         lr,
         betas,
         eps,
-        weight_decay
+        weight_decay,
+        lr_max=lr_max,
+        lr_min=lr_min,
+        t_w=t_w,
+        t_c=t_c
     )
     iteration = 0
     if from_save:
@@ -77,6 +86,17 @@ def training_loop(
         optimizer.step()
 
         losses[i + 1] = loss.item()
+        # lr = learning_rate_schedule(
+        #     i + 1, 
+        #     lr_max=lr_max,
+        #     lr_min=lr_min,
+        #     t_w=t_w,
+        #     t_c=t_c
+        # ) if lr_max is not None else lr
+        # if i > 0:
+        #     print(
+        #     f"Step: {i + 1}, Loss: {loss.item()}, LD: {loss.item() / losses[i]}, LR: {lr}"
+        #     )
         # Validation logging
         if val_data_path is not None and (i + 1) % val_steps == 0 or i == num_iterations - 1:
             val_dataset = np.memmap(data_path, mode="r")
