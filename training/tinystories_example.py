@@ -1,5 +1,5 @@
 import torch
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from training_together import training_loop
 
 
@@ -19,7 +19,7 @@ if __name__ == "__main__":
         d_ff=1344,
         rope_theta=10_000,
         lr=1e-3,
-        betas=(0.9, 0.99),
+        betas=(0.9, 0.999),
         eps=1e-8,
         weight_decay=1e-2,
         max_norm=1.0,
@@ -30,10 +30,11 @@ if __name__ == "__main__":
         device=torch.device("cuda"),
         dtype=torch.float32,
         val_data_path=f"{path_pref}/tinystories_valid_encoded.npy",
-        val_steps=100
+        val_steps=2
     )
-    plt.plot(list(losses.keys()), list(losses.values()), color="red")
-    plt.plot(list(val_losses.keys()), list(val_losses.values()), color="blue")
-    plt.xlabel("Step")
-    plt.ylabel("Loss")
-    plt.show()
+    # tensorboard --logdir=runs
+    # plt.plot(list(losses.keys()), list(losses.values()), color="red")
+    # plt.plot(list(val_losses.keys()), list(val_losses.values()), color="blue")
+    # plt.xlabel("Step")
+    # plt.ylabel("Loss")
+    # plt.show()

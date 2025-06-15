@@ -1,6 +1,7 @@
 import numpy as np
 import torch
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
+from torch.utils.tensorboard import SummaryWriter
 
 from cs336_basics.transformer_lm import TransformerLM
 from cs336_basics.adamw import AdamW
@@ -66,8 +67,10 @@ def training_loop(
     dataset = np.memmap(data_path, mode="r", dtype=np.uint16)
     model.train()
     losses, val_losses = {}, {}
+    writer = SummaryWriter()
     for i in range(iteration, num_iterations):
         # Get batch
+        # np.random.seed(0)  # to overfit with one batch
         x, y = data_loading(dataset, batch_size, context_length, device)
         x, y = x.int(), y.long()
         # Forward pass
@@ -85,7 +88,6 @@ def training_loop(
 
         optimizer.step()
 
-        losses[i + 1] = loss.item()
         # lr = learning_rate_schedule(
         #     i + 1, 
         #     lr_max=lr_max,
@@ -109,17 +111,31 @@ def training_loop(
                     val_logits.view(-1, val_logits.size(-1)),
                     val_y.view(-1)
                 )
-                print(f"Iteration {i + 1}/{num_iterations}, validation loss: {val_loss.item()}")
-                val_losses[i + 1] = val_loss.item()
+                epoch = i + 1
+                losses[epoch] = loss.item()
+                val_losses[epoch] = val_loss.item()
+                writer.add_scalars("Losses", {
+                    "train": loss,
+                    "valid": val_loss
+                }, epoch)
             model.train()
 
         if (i + 1) % checkpoints_step == 0 or i == num_iterations - 1:
             save_checkpoint(model, optimizer, i + 1, checkpoint_path)
             print(f"Checkpoint saved at iteration {i + 1}, loss: {loss.item()}")
 
-        if (i + 1) % 100 == 0 or i == num_iterations - 1:
+        if (i + 1) % 10 == 0 or i == num_iterations - 1:
             print(f"Iteration {i + 1}/{num_iterations}, loss: {loss.item()}")
-    
+            print(f"Iteration {i + 1}/{num_iterations}, validation loss: {val_loss.item()}")
+            # plt.plot(list(losses.keys()), list(losses.values()), 
+            #     color="red", label="Training")
+            # plt.plot(list(val_losses.keys()), list(val_losses.values()), 
+            #     color="blue", label="Validation")
+            # plt.xlabel("Epochs")
+            # plt.ylabel("Loss")
+            # # plt.savefig("losses.jpg")
+            # plt.show(block=False)
+    writer.close()
     return losses, val_losses
 
 
@@ -143,8 +159,8 @@ if __name__ == "__main__":
         val_data_path=f"{path_pref}/tinystories_valid_encoded.npy",
         val_steps=1000
     )
-    plt.plot(list(losses.keys()), list(losses.values()), color="red")
-    plt.plot(list(val_losses.keys()), list(val_losses.values()), color="blue")
-    plt.xlabel("Step")
-    plt.ylabel("Loss")
-    plt.show()
+    # plt.plot(list(losses.keys()), list(losses.values()), color="red")
+    # plt.plot(list(val_losses.keys()), list(val_losses.values()), color="blue")
+    # plt.xlabel("Step")
+    # plt.ylabel("Loss")
+    # plt.show()
