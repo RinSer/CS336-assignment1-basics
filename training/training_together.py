@@ -112,7 +112,7 @@ if __name__ == "__main__":
         num_heads=16,
         d_ff=1344,
         rope_theta=10_000,
-        device=torch.device("cpu"),
+        device=torch.device("cuda"),
         dtype=torch.float32,
         val_data_path=f"{path_pref}/tinystories_valid_encoded.npy",
         val_steps=1000
