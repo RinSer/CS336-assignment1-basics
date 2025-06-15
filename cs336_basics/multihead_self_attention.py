@@ -64,7 +64,7 @@ class MultiheadSelfAttention(torch.nn.Module):
             einops.rearrange(V_weights, '(h d_k) d_in -> h d_k d_in', h=self.num_heads))
         self.rope = None
         if theta is not None and max_seq_len is not None:
-            self.rope = RotaryPositionalEmbedding(theta, d_k, max_seq_len, device)
+            self.rope = RotaryPositionalEmbedding(theta, d_k, max_seq_len, device, dtype)
 
     def forward(
         self,

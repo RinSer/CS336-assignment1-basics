@@ -11,7 +11,8 @@ class RotaryPositionalEmbedding:
         theta: float,
         d_k: int, 
         max_seq_len: int, 
-        device=None):
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None):
         """
         RoPE (Rotary Positional Embedding) implementation.
 
@@ -19,16 +20,19 @@ class RotaryPositionalEmbedding:
             theta (float): Θ value for the RoPE
             d_k (int): dimension of query and key vectors
             max_seq_len (int): Maximum sequence length that will be inputted
-            device (torch.device | None): Device to store the buffer on
+            device (torch.device | None): Device to store the parameters on
+            dtype (torch.dtype | None): Data type of the parameters
         """
-        pos: Int[Tensor, "max_seq_len 1"] = torch.arange(max_seq_len, device=device).unsqueeze(1)
-        k: Float[Tensor, "1 d_k//2"] = torch.arange(d_k // 2, device=device).unsqueeze(0)
+        pos: Int[Tensor, "max_seq_len 1"] = torch.arange(
+            max_seq_len, device=device, dtype=dtype).unsqueeze(1)
+        k: Float[Tensor, "1 d_k//2"] = torch.arange(
+            d_k // 2, device=device, dtype=dtype).unsqueeze(0)
         theta_i_k: Float[Tensor, "max_seq_len d_k//2"] = pos / (theta ** (2 * k / d_k))
         self.cos: Float[Tensor, "max_seq_len d_k//2"] = torch.cos(theta_i_k)
         self.sin: Float[Tensor, "max_seq_len d_k//2"] = torch.sin(theta_i_k)
 
     def forward(
-        self, 
+        self,
         x: Float[Tensor, " ... sequence_length d_k"], 
         token_positions: Int[Tensor, " ... sequence_length"]
     ) -> Float[Tensor, " ... sequence_length d_k"]:
