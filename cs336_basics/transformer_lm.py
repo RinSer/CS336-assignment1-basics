@@ -82,6 +82,7 @@ class TransformerLM(torch.nn.Module):
                     Shape is (vocab_size, d_model).
         """
         super().__init__()
+        self.device, self.dtype = device, dtype
         self.token_embeddings = Embedding(
             vocab_size, d_model,
             device=device, dtype=dtype,

@@ -39,7 +39,7 @@ class Linear(torch.nn.Module):
                 self.weights, mean=0.0, std=std, a=-3.0*std, b=3.0*std
             )
 
-    def forward(self, x: Float[torch.Tensor, "... in_features"]) -> Float[torch.Tensor, "... in_features"]:
+    def forward(self, x: Float[torch.Tensor, "... in_features"]) -> Float[torch.Tensor, "... out_features"]:
         """
         Apply the linear transformation to the input tensor.
 
