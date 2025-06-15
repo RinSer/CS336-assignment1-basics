@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import matplotlib.pyplot as plt
 
 from cs336_basics.transformer_lm import TransformerLM
 from cs336_basics.adamw import AdamW
@@ -31,7 +32,7 @@ def training_loop(
     dtype: torch.dtype | None = None,
     from_save: bool = False,
     val_data_path: str = None,
-    val_steps: int = 1000,):
+    val_steps: int = 1000,) -> tuple[dict[int, float], dict[int, float]]:
     model = TransformerLM(
         vocab_size,
         context_length,
@@ -55,6 +56,7 @@ def training_loop(
         iteration = load_checkpoint(checkpoint_path, model, optimizer)
     dataset = np.memmap(data_path, mode="r", dtype=np.uint16)
     model.train()
+    losses, val_losses = {}, {}
     for i in range(iteration, num_iterations):
         # Get batch
         x, y = data_loading(dataset, batch_size, context_length, device)
@@ -74,6 +76,7 @@ def training_loop(
 
         optimizer.step()
 
+        losses[i + 1] = loss.item()
         # Validation logging
         if val_data_path is not None and (i + 1) % val_steps == 0 or i == num_iterations - 1:
             val_dataset = np.memmap(data_path, mode="r")
@@ -87,6 +90,7 @@ def training_loop(
                     val_y.view(-1)
                 )
                 print(f"Iteration {i + 1}/{num_iterations}, validation loss: {val_loss.item()}")
+                val_losses[i + 1] = val_loss.item()
             model.train()
 
         if (i + 1) % checkpoints_step == 0 or i == num_iterations - 1:
@@ -96,12 +100,14 @@ def training_loop(
         if (i + 1) % 100 == 0 or i == num_iterations - 1:
             print(f"Iteration {i + 1}/{num_iterations}, loss: {loss.item()}")
     
+    return losses, val_losses
+
 
 if __name__ == "__main__":
     path_pref = "./data"
-    training_loop(
+    losses, val_losses = training_loop(
         num_iterations=2500,
-        checkpoint_path=f"{path_pref}/test_training_loop.dat",
+        checkpoint_path=f"{path_pref}/test_training_loop_2.dat",
         checkpoints_step=1000,
         data_path=f"{path_pref}/tinystories_train_encoded.npy",
         batch_size=10,
@@ -117,3 +123,8 @@ if __name__ == "__main__":
         val_data_path=f"{path_pref}/tinystories_valid_encoded.npy",
         val_steps=1000
     )
+    plt.plot(list(losses.keys()), list(losses.values()), color="red")
+    plt.plot(list(val_losses.keys()), list(val_losses.values()), color="blue")
+    plt.xlabel("Step")
+    plt.ylabel("Loss")
+    plt.show()
