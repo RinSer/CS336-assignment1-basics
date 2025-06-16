@@ -29,6 +29,6 @@ if __name__ == "__main__":
         device=torch.device("cuda"),
         dtype=torch.float32,
         val_data_path=f"{path_pref}/tinystories_valid_encoded.npy",
-        val_steps=2,
+        val_steps=100,
         from_save=False
     )
