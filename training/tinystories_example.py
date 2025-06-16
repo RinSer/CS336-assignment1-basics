@@ -1,11 +1,10 @@
 import torch
-# import matplotlib.pyplot as plt
 from training_together import training_loop
 
 
 if __name__ == "__main__":
     path_pref = "./data"
-    losses, val_losses = training_loop(
+    training_loop(
         num_iterations=40_000,
         checkpoint_path=f"{path_pref}/tinystories.dat",
         checkpoints_step=1000,
@@ -21,20 +20,15 @@ if __name__ == "__main__":
         lr=1e-3,
         betas=(0.9, 0.999),
         eps=1e-8,
-        weight_decay=1e-2,
-        max_norm=1.0,
-        # lr_max=1e-3,
-        # lr_min=1e-5,
-        # t_w=100,
-        # t_c=30_000,
+        weight_decay=1e-5,
+        max_norm=2.0,
+        lr_max=1e-3,
+        lr_min=1e-4,
+        t_w=100,
+        t_c=20_000,
         device=torch.device("cuda"),
         dtype=torch.float32,
         val_data_path=f"{path_pref}/tinystories_valid_encoded.npy",
-        val_steps=2
+        val_steps=2,
+        from_save=False
     )
-    # tensorboard --logdir=runs
-    # plt.plot(list(losses.keys()), list(losses.values()), color="red")
-    # plt.plot(list(val_losses.keys()), list(val_losses.values()), color="blue")
-    # plt.xlabel("Step")
-    # plt.ylabel("Loss")
-    # plt.show()
