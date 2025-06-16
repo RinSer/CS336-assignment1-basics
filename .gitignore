@@ -167,3 +167,4 @@ data/
 *.dat
 
 runs/
+runs*/
