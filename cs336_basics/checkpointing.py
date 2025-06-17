@@ -19,9 +19,10 @@ def save_checkpoint(
 def load_checkpoint(
     src: str,
     model: torch.nn.Module,
-    optimizer: torch.optim.Optimizer,
+    optimizer: torch.optim.Optimizer | None = None,
 ) -> int:
     state: dict = torch.load(src)
     model.load_state_dict(state["model"])
-    optimizer.load_state_dict(state["optimizer"])
+    if optimizer is not None:
+        optimizer.load_state_dict(state["optimizer"])
     return int(state.get("iteration", 0))

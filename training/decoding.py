@@ -41,7 +41,7 @@ def decode(
     generated = torch.tensor(generated, device=model.device, dtype=torch.int)
     eot = tokenizer.mapping[SPECIAL_TOKEN.encode("utf-8")]
     with torch.no_grad():
-        for _ in range(max_tokens):
+        while len(generated) < max_tokens:
             logits = model.forward(generated)
             logits = logits[-1]  # consider only the last token
             # Apply temperature
