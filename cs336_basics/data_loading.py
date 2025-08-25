@@ -27,7 +27,7 @@ def data_loading(
     """
     data_len = len(dataset)
     # Randomly sample start indices so that context_length+1 tokens fit
-    starts = np.random.randint(0, data_len - context_length, size=batch_size)
+    starts = np.random.randint(0, data_len - context_length, size=batch_size, dtype=np.uint32)
     # Gather input and label sequences
     input_seqs = np.array([dataset[s:s+context_length] for s in starts])
     label_seqs = np.array([dataset[s+1:s+context_length+1] for s in starts])
